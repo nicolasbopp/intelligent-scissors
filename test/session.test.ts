@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createScissors, polygonArea, polygonToMask, ScissorsSession, simplifyPath } from '../src';
-import { rectangleImage } from './helpers';
+import { distanceToRectOutline, rectangleImage } from './helpers';
 
 const image = rectangleImage(100, 80, 20, 15, 79, 64);
 
@@ -48,6 +48,30 @@ describe('ScissorsSession', () => {
         session.undo();
         session.undo();
         expect(session.started).toBe(false);
+    });
+
+    it('places anchors on its own when path cooling is on', () => {
+        const session = new ScissorsSession(createScissors(image), { autoAnchor: 5, autoAnchorMinLength: 20 });
+        session.click({ x: 20, y: 64 });
+
+        // Slide along the bottom edge and up the right one, a few pixels at a time
+        for (let x = 22; x <= 79; x += 2) session.move({ x, y: 64 });
+        for (let y = 62; y >= 15; y -= 2) session.move({ x: 79, y });
+
+        expect(session.anchors.length).toBeGreaterThan(2);
+        for (const a of session.anchors) {
+            expect(distanceToRectOutline(a.x, a.y, 20, 15, 79, 64)).toBeLessThanOrEqual(1.5);
+        }
+        // the committed segments plus the live path still form one connected outline
+        const last = session.anchors[session.anchors.length - 1];
+        expect(session.livePath[0]).toEqual(last);
+    });
+
+    it('does not place anchors on its own by default', () => {
+        const session = new ScissorsSession(createScissors(image));
+        session.click({ x: 20, y: 64 });
+        for (let x = 22; x <= 79; x += 2) session.move({ x, y: 64 });
+        expect(session.anchors.length).toBe(1);
     });
 
     it('cannot close with a single anchor', () => {
