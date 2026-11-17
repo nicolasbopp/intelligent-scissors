@@ -40,6 +40,30 @@ describe('IntelligentScissors', () => {
         expect(fresh.pathTo({ x: 79, y: 60 })).toEqual(resumed);
     });
 
+    it('can spread a long search over several calls', () => {
+        const scissors = createScissors(image);
+        scissors.setSeed({ x: 2, y: 2 });
+        const far = { x: 97, y: 77 };
+
+        let calls = 0;
+        while (!scissors.searchTowards(far, 500)) calls++;
+        expect(calls).toBeGreaterThan(3);
+        expect(scissors.hasPathTo(far)).toBe(true);
+
+        const fresh = new IntelligentScissors(scissors.costMap);
+        fresh.setSeed({ x: 2, y: 2 });
+        expect(scissors.pathTo(far)).toEqual(fresh.pathTo(far));
+    });
+
+    it('forgets the search when the seed changes', () => {
+        const scissors = createScissors(image);
+        scissors.setSeed({ x: 20, y: 30 });
+        scissors.pathTo({ x: 25, y: 30 });
+        expect(scissors.hasPathTo({ x: 25, y: 30 })).toBe(true);
+        scissors.setSeed({ x: 79, y: 60 });
+        expect(scissors.hasPathTo({ x: 25, y: 30 })).toBe(false);
+    });
+
     it('clamps out-of-bounds points and requires a seed', () => {
         const scissors = createScissors(image);
         expect(() => scissors.pathTo({ x: 1, y: 1 })).toThrow(/setSeed/);

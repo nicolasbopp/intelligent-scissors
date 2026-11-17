@@ -66,13 +66,31 @@ export class IntelligentScissors {
      * Throws if no seed has been set.
      */
     pathTo(point: Point): Point[] {
-        if (this.seedIndex < 0) throw new Error('intelligent-scissors: call setSeed() before pathTo()');
-        const target = this.toIndex(point);
-        this.expandUntil(target);
+        const target = this.targetIndex(point);
+        this.expand(target, Infinity);
 
         const path: Point[] = [];
         for (let i = target; i >= 0; i = this.prev[i]) path.push(this.toPoint(i));
         return path.reverse();
+    }
+
+    /**
+     * Continues the search towards `point` for at most `maxSteps` pixels and reports whether
+     * the path to it is now known. Lets you spread a long search over several animation
+     * frames instead of blocking in `pathTo`:
+     *
+     * ```ts
+     * if (scissors.searchTowards(pointer, 20_000)) draw(scissors.pathTo(pointer));
+     * else requestAnimationFrame(tryAgain);
+     * ```
+     */
+    searchTowards(point: Point, maxSteps: number): boolean {
+        return this.expand(this.targetIndex(point), maxSteps);
+    }
+
+    /** Whether `pathTo(point)` would return immediately, without searching further. */
+    hasPathTo(point: Point): boolean {
+        return this.settled[this.targetIndex(point)] === this.generation;
     }
 
     /**
@@ -102,15 +120,23 @@ export class IntelligentScissors {
         return best;
     }
 
-    private expandUntil(target: number): void {
+    private targetIndex(point: Point): number {
+        if (this.seedIndex < 0) throw new Error('intelligent-scissors: call setSeed() first');
+        return this.toIndex(point);
+    }
+
+    /** Dijkstra until `target` is settled or `maxSteps` pixels were settled. */
+    private expand(target: number, maxSteps: number): boolean {
         const { dist, prev, stamp, settled, heap, costMap, width, height } = this;
         const gen = this.generation;
+        let steps = 0;
 
-        while (settled[target] !== gen && heap.size > 0) {
+        while (settled[target] !== gen && heap.size > 0 && steps < maxSteps) {
             const p = heap.pop();
             const d = heap.lastKey;
-            if (settled[p] === gen || d > dist[p]) continue; // stale heap entry
+            if (settled[p] === gen || d > dist[p]) continue; // outdated heap entry
             settled[p] = gen;
+            steps++;
 
             const px = p % width;
             const py = (p - px) / width;
@@ -131,6 +157,7 @@ export class IntelligentScissors {
                 }
             }
         }
+        return settled[target] === gen;
     }
 
     private clamp(point: Point): Point {
