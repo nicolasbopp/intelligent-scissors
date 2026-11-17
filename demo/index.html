@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>intelligent-scissors · demo</title>
-    <meta name="description" content="Livewire / Intelligent Scissors for the web: click, move, and the outline snaps to edges." />
+    <title>intelligent-scissors demo</title>
+    <meta name="description" content="Live-wire segmentation in the browser: click around an object and the outline follows its edges." />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M3 12C3 5 9 2 13 4%27 fill=%27none%27 stroke=%27%23ffd60a%27 stroke-width=%272%27/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./style.css" />
 </head>
@@ -12,7 +12,7 @@
     <header>
         <div>
             <h1>intelligent-scissors</h1>
-            <p>Edge-snapping outlines for any image. Zero dependencies.</p>
+            <p>Live-wire segmentation for the browser. Click around an object and the outline follows its edges.</p>
         </div>
         <nav>
             <a href="https://github.com/nicolasbopp/intelligent-scissors">GitHub</a>
@@ -21,8 +21,11 @@
 
     <main>
         <section class="stage" id="stage">
-            <canvas id="canvas" aria-label="Image to trace"></canvas>
-            <div class="drop-hint" id="dropHint">Drop an image to trace it</div>
+            <figure>
+                <canvas id="canvas" aria-label="Image to trace"></canvas>
+                <figcaption id="credit"></figcaption>
+            </figure>
+            <div class="drop-hint">Drop an image to trace it</div>
         </section>
 
         <aside>
@@ -34,25 +37,39 @@
                     <li><kbd>Double-click</kbd> or click the first anchor to close</li>
                     <li><kbd>Backspace</kbd> undo · <kbd>Esc</kbd> cancel</li>
                 </ul>
+                <label class="check">
+                    <input type="checkbox" id="autoAnchor" />
+                    <span>Auto anchors<small>Places an anchor wherever the path has stopped changing, so you can trace by just moving the mouse.</small></span>
+                </label>
             </section>
 
             <section>
                 <h2>Image</h2>
-                <div class="row">
-                    <label class="button">
-                        Open image…
-                        <input type="file" id="file" accept="image/*" hidden />
-                    </label>
-                    <button id="sample" type="button">Sample</button>
-                </div>
-                <div class="segmented" role="radiogroup" aria-label="View">
-                    <label><input type="radio" name="view" value="image" checked /> Image</label>
-                    <label><input type="radio" name="view" value="cost" /> Cost map</label>
-                </div>
+                <div class="samples" id="samples" role="radiogroup" aria-label="Sample image"></div>
+                <label class="button open">
+                    Open your own image…
+                    <input type="file" id="file" accept="image/*" hidden />
+                </label>
+            </section>
+
+            <section id="windowing" hidden>
+                <h2>Window</h2>
+                <p class="hint">This image is 16-bit grayscale. The window picks the intensity range that is shown and used for edge detection, as in a DICOM viewer.</p>
+                <label class="slider">Center <output id="centerOut"></output>
+                    <input type="range" id="center" min="0" max="450" step="1" value="273" />
+                </label>
+                <label class="slider">Width <output id="widthOut"></output>
+                    <input type="range" id="width" min="20" max="900" step="1" value="474" />
+                </label>
             </section>
 
             <section>
                 <h2>Cost function</h2>
+                <div class="segmented" role="radiogroup" aria-label="View">
+                    <label><input type="radio" name="view" value="image" checked /> Image</label>
+                    <label><input type="radio" name="view" value="cost" /> Cost map</label>
+                </div>
+                <p class="hint">The cost map shows what the path prefers: dark pixels are cheap to walk along.</p>
                 <label class="slider">Gradient magnitude <output id="gradientOut"></output>
                     <input type="range" id="gradient" min="0" max="1" step="0.01" value="0.43" />
                 </label>

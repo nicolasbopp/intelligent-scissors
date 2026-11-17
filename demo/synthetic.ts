@@ -2,7 +2,7 @@
  * Procedurally generated sample image (no licensing questions): smooth organic blobs on a
  * textured background with sensor-like noise, so there are realistic edges to trace.
  */
-export function createSampleImage(width = 900, height = 600): HTMLCanvasElement {
+export function createSyntheticImage(width = 900, height = 600): HTMLCanvasElement {
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
