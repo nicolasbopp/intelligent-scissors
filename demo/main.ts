@@ -1,5 +1,6 @@
-import { costMapToRGBA, polygonArea, type CostMap, type ImageInput } from 'intelligent-scissors';
+import { costMapToRGBA, type CostMap, type ImageInput } from 'intelligent-scissors';
 import { attachScissors, type ImageSource } from 'intelligent-scissors/canvas';
+import { setUpHelp } from './help';
 import { SAMPLES, type Sample } from './samples';
 import { createSyntheticImage } from './synthetic';
 
@@ -8,7 +9,6 @@ const slider = (id: string) => byId<HTMLInputElement>(id);
 
 const stage = byId<HTMLElement>('stage');
 const canvas = byId<HTMLCanvasElement>('canvas');
-const stats = byId<HTMLParagraphElement>('stats');
 const credit = byId<HTMLElement>('credit');
 const windowing = byId<HTMLElement>('windowing');
 
@@ -30,7 +30,6 @@ const tool = attachScissors(canvas, {
             ctx.drawImage(t.image, 0, 0);
         }
     },
-    onChange: updateStats,
 });
 
 function renderCostMap(map: CostMap): HTMLCanvasElement {
@@ -39,23 +38,6 @@ function renderCostMap(map: CostMap): HTMLCanvasElement {
     canvas.height = map.height;
     canvas.getContext('2d')!.putImageData(new ImageData(costMapToRGBA(map), map.width, map.height), 0, 0);
     return canvas;
-}
-
-function updateStats() {
-    const { shapes, session } = tool;
-    if (shapes.length === 0 && !session.started) {
-        stats.textContent = 'No shapes yet.';
-        return;
-    }
-    const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-    const parts = [count(shapes.length, 'shape', 'shapes')];
-    const last = shapes[shapes.length - 1];
-    if (last) {
-        const area = Math.round(polygonArea(last)).toLocaleString('en');
-        parts.push(`last one: ${count(last.length, 'vertex', 'vertices')}, ${area} px²`);
-    }
-    if (session.started) parts.push(`tracing with ${count(session.anchors.length, 'anchor', 'anchors')}`);
-    stats.textContent = parts.join(' · ');
 }
 
 function showImage(image: ImageSource, options?: { keepShapes?: boolean }) {
@@ -215,21 +197,9 @@ function setUpControls() {
         });
     }
     showValues();
-
-    byId('undo').addEventListener('click', () => tool.undo());
-    byId('clear').addEventListener('click', () => tool.clear());
-    byId('export').addEventListener('click', downloadShapes);
-}
-
-function downloadShapes() {
-    const blob = new Blob([JSON.stringify(tool.shapes, null, 2)], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'shapes.json';
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
 setUpImageInput();
 setUpControls();
+setUpHelp();
 void openSample(SAMPLES[0]);

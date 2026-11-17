@@ -157,12 +157,6 @@ kbd {
     font: 0.8rem ui-monospace, monospace;
 }
 
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
 button,
 .button {
     padding: 6px 12px;
@@ -207,7 +201,8 @@ button:hover,
 
 .slider {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
     gap: 4px;
     margin-bottom: 10px;
     font-size: 0.9rem;
@@ -219,14 +214,9 @@ button:hover,
 }
 
 output {
+    justify-self: end;
     color: var(--muted);
     font-family: ui-monospace, monospace;
-}
-
-.stats {
-    margin: 0 0 10px;
-    font-size: 0.9rem;
-    color: var(--muted);
 }
 
 pre {
@@ -300,4 +290,36 @@ pre {
 
 .open {
     display: inline-block;
+}
+
+.help {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin-left: 6px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--muted);
+}
+
+.help[aria-expanded='true'] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* The view switch has no label of its own, so its button goes below it on the right */
+.segmented + .help {
+    display: block;
+    margin: 6px 0 0 auto;
+}
+
+.help-text {
+    margin: -4px 0 12px;
+    padding: 8px 10px;
+    border-left: 2px solid var(--accent);
+    background: var(--ground);
+    color: var(--text);
+    font-size: 0.8rem;
+    line-height: 1.45;
 }

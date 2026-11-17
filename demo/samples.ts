@@ -48,13 +48,6 @@ export const SAMPLES: Sample[] = [
         load: loadMri,
     },
     {
-        id: 'retina',
-        label: 'Retina',
-        credit: 'Fundus photograph of a normal left eye. Mikael Häggström, Wikimedia Commons (CC0).',
-        sigma: 1.5,
-        load: () => loadPicture('retina.jpg'),
-    },
-    {
         id: 'cell',
         label: 'Cell',
         credit: 'Quantitative phase image of a cell in saline. Müller et al., Optics Express 2018 (CC0), via scikit-image.',
