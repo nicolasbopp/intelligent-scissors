@@ -15,4 +15,4 @@ First version.
   Searches in slices of a few milliseconds per frame, so the page stays responsive on large
   images, and takes raw 16-bit data with a display window as well as regular images
 - Helpers: `simplifyPath`, `polygonToMask`, `polygonArea`, `costMapToRGBA`
-- Demo page with sample images (pelvic MRI, histology, retina, cell microscopy) and examples
+- Demo page with sample images (pelvic MRI, retina, cell microscopy) and examples

@@ -7,6 +7,7 @@ const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) 
 const slider = (id: string) => byId<HTMLInputElement>(id);
 
 const stage = byId<HTMLElement>('stage');
+const canvas = byId<HTMLCanvasElement>('canvas');
 const stats = byId<HTMLParagraphElement>('stats');
 const credit = byId<HTMLElement>('credit');
 const windowing = byId<HTMLElement>('windowing');
@@ -16,10 +17,11 @@ let costMapImage: HTMLCanvasElement | null = null;
 /** The current raw grayscale image, if any, so the window can be changed. */
 let rawImage: ImageInput | null = null;
 
-const tool = attachScissors(byId<HTMLCanvasElement>('canvas'), {
+const tool = attachScissors(canvas, {
     image: createSyntheticImage(),
     snapRadius: 5,
     simplify: 0.75,
+    autoAnchor: 12,
     background(ctx, t) {
         if (showCostMap) {
             costMapImage ??= renderCostMap(t.scissors.costMap);
@@ -59,7 +61,25 @@ function updateStats() {
 function showImage(image: ImageSource, options?: { keepShapes?: boolean }) {
     costMapImage = null;
     tool.setImage(image, options);
+    fitCanvas();
 }
+
+/**
+ * Scales the canvas, up or down, to the largest size that fits the stage next to the
+ * caption. The tool maps the pointer through the canvas's on-screen size, so this is safe.
+ */
+function fitCanvas() {
+    const padding = 48;
+    const gap = 10;
+    const width = stage.clientWidth - padding;
+    const height = stage.clientHeight - padding - credit.offsetHeight - gap;
+    const scale = Math.min(width / canvas.width, height / canvas.height);
+    if (!(scale > 0)) return;
+    canvas.style.width = `${Math.floor(canvas.width * scale)}px`;
+    canvas.style.height = `${Math.floor(canvas.height * scale)}px`;
+}
+
+new ResizeObserver(fitCanvas).observe(stage);
 
 function setSigma(sigma: number) {
     slider('sigma').value = String(sigma);
@@ -71,6 +91,7 @@ async function openSample(sample: Sample) {
         button.setAttribute('aria-checked', String(button.dataset.id === sample.id));
     }
     credit.textContent = sample.credit;
+    fitCanvas();
 
     const image = await sample.load();
     if (sample.window && 'data' in image && !(image instanceof ImageData)) {

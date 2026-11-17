@@ -48,13 +48,6 @@ export const SAMPLES: Sample[] = [
         load: loadMri,
     },
     {
-        id: 'skin',
-        label: 'Histology',
-        credit: 'H&E stained skin section, 10×. Kilbad, Wikimedia Commons (public domain).',
-        sigma: 1.5,
-        load: () => loadPicture('skin-he.jpg'),
-    },
-    {
         id: 'retina',
         label: 'Retina',
         credit: 'Fundus photograph of a normal left eye. Mikael Häggström, Wikimedia Commons (CC0).',
