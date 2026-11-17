@@ -1,0 +1,84 @@
+{
+  "name": "intelligent-scissors",
+  "version": "0.1.0",
+  "description": "Livewire / Intelligent Scissors (magnetic lasso) for the web: edge-snapping contour tracing on any image or canvas. Zero dependencies, framework-agnostic, works with RGBA and medical grayscale data.",
+  "keywords": [
+    "intelligent-scissors",
+    "livewire",
+    "live-wire",
+    "magnetic-lasso",
+    "segmentation",
+    "image-segmentation",
+    "annotation",
+    "contour",
+    "edge-detection",
+    "canvas",
+    "medical-imaging",
+    "dicom",
+    "computer-vision"
+  ],
+  "license": "MIT",
+  "author": "Nicolas Bopp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicolasbopp/intelligent-scissors.git"
+  },
+  "homepage": "https://nicolasbopp.github.io/intelligent-scissors/",
+  "bugs": "https://github.com/nicolasbopp/intelligent-scissors/issues",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./canvas": {
+      "import": {
+        "types": "./dist/canvas/index.d.ts",
+        "default": "./dist/canvas/index.js"
+      },
+      "require": {
+        "types": "./dist/canvas/index.d.cts",
+        "default": "./dist/canvas/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "dev": "vite",
+    "build:demo": "vite build",
+    "prepare": "tsup",
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.29.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
