@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>intelligent-scissors · demo</title>
+    <meta name="description" content="Livewire / Intelligent Scissors for the web: click, move, and the outline snaps to edges." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M3 12C3 5 9 2 13 4%27 fill=%27none%27 stroke=%27%23ffd60a%27 stroke-width=%272%27/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+    <header>
+        <div>
+            <h1>intelligent-scissors</h1>
+            <p>Edge-snapping outlines for any image. Zero dependencies.</p>
+        </div>
+        <nav>
+            <a href="https://github.com/nicolasbopp/intelligent-scissors">GitHub</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="stage" id="stage">
+            <canvas id="canvas" aria-label="Image to trace"></canvas>
+            <div class="drop-hint" id="dropHint">Drop an image to trace it</div>
+        </section>
+
+        <aside>
+            <section>
+                <h2>How to use</h2>
+                <ul class="keys">
+                    <li><kbd>Click</kbd> place an anchor</li>
+                    <li><kbd>Move</kbd> the path follows edges</li>
+                    <li><kbd>Double-click</kbd> or click the first anchor to close</li>
+                    <li><kbd>Backspace</kbd> undo · <kbd>Esc</kbd> cancel</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Image</h2>
+                <div class="row">
+                    <label class="button">
+                        Open image…
+                        <input type="file" id="file" accept="image/*" hidden />
+                    </label>
+                    <button id="sample" type="button">Sample</button>
+                </div>
+                <div class="segmented" role="radiogroup" aria-label="View">
+                    <label><input type="radio" name="view" value="image" checked /> Image</label>
+                    <label><input type="radio" name="view" value="cost" /> Cost map</label>
+                </div>
+            </section>
+
+            <section>
+                <h2>Cost function</h2>
+                <label class="slider">Gradient magnitude <output id="gradientOut"></output>
+                    <input type="range" id="gradient" min="0" max="1" step="0.01" value="0.43" />
+                </label>
+                <label class="slider">Zero crossing <output id="laplacianOut"></output>
+                    <input type="range" id="laplacian" min="0" max="1" step="0.01" value="0.43" />
+                </label>
+                <label class="slider">Direction <output id="directionOut"></output>
+                    <input type="range" id="direction" min="0" max="1" step="0.01" value="0.14" />
+                </label>
+                <label class="slider">Smoothing σ <output id="sigmaOut"></output>
+                    <input type="range" id="sigma" min="0" max="4" step="0.25" value="1" />
+                </label>
+            </section>
+
+            <section>
+                <h2>Shapes</h2>
+                <p class="stats" id="stats">No shapes yet.</p>
+                <div class="row">
+                    <button id="undo" type="button">Undo</button>
+                    <button id="clear" type="button">Clear</button>
+                    <button id="export" type="button">Export JSON</button>
+                </div>
+            </section>
+
+            <section>
+                <h2>Use it</h2>
+<pre><code>import { attachScissors } from 'intelligent-scissors/canvas';
+
+attachScissors(canvas, {
+  image: img,
+  onComplete: polygon => save(polygon),
+});</code></pre>
+            </section>
+        </aside>
+    </main>
+
+    <script type="module" src="./main.ts"></script>
+</body>
+</html>
