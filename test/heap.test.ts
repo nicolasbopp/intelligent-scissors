@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MinHeap } from '../src';
+import { MinHeap } from '../src/core/heap';
 
 describe('MinHeap', () => {
     it('pops values in key order and grows past its initial capacity', () => {
