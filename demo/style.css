@@ -1,19 +1,19 @@
 /*
- * The page is a cutting mat with a sheet of notes next to it: the image lies on the green
+ * The page is a cutting mat with a sheet of notes next to it: the image lies on the blue
  * mat between two rulers, the controls are on the paper.
  */
 :root {
-    --mat: #1b4b3f;
-    --mat-deep: #143a31;
-    --mat-line: rgb(236 230 200 / 0.07);
-    --print: #ece6c8;
-    --print-dim: rgb(236 230 200 / 0.62);
-    --yellow: #f1c933;
-    --paper: #f3f4ef;
-    --paper-shade: #e6e8e0;
-    --rule: #d3d7cd;
-    --ink: #18231f;
-    --ink-soft: #55625c;
+    --mat: #23405c;
+    --mat-deep: #1a3049;
+    --mat-line: rgb(226 236 246 / 0.08);
+    --print: #e6edf4;
+    --print-dim: rgb(226 236 246 / 0.62);
+    --accent: #7fd6e8;
+    --paper: #f2f4f6;
+    --paper-shade: #e4e8ec;
+    --rule: #cfd6dd;
+    --ink: #17212b;
+    --ink-soft: #56626e;
 
     --ruler: 18px;
     --condensed: 'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
@@ -36,7 +36,7 @@ body {
 }
 
 :focus-visible {
-    outline: 2px solid var(--yellow);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
 
@@ -63,11 +63,18 @@ header > div {
     gap: 2px 18px;
 }
 
+header img {
+    align-self: center;
+    margin-right: -8px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px var(--print-dim);
+}
+
 h1 {
     margin: 0;
     font: 600 1.6rem/1.1 var(--condensed);
     letter-spacing: 0.01em;
-    color: var(--yellow);
+    color: var(--accent);
 }
 
 header p {
@@ -87,7 +94,7 @@ nav a {
 }
 
 nav a:hover {
-    color: var(--yellow);
+    color: var(--accent);
 }
 
 /* Layout */
@@ -144,7 +151,7 @@ figure {
 
 .frame canvas:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--yellow);
+    box-shadow: 0 0 0 2px var(--accent);
 }
 
 .ruler {
@@ -194,7 +201,7 @@ figure {
 /* Where the pointer is, shown on both rulers */
 .ruler i {
     position: absolute;
-    background: var(--yellow);
+    background: var(--accent);
 }
 
 .ruler-x i {
@@ -225,16 +232,6 @@ figure {
     margin: 0;
 }
 
-.actions {
-    display: flex;
-    gap: 6px;
-    white-space: nowrap;
-}
-
-.actions[hidden] {
-    display: none;
-}
-
 .stage button {
     border-color: var(--print-dim);
     background: none;
@@ -242,8 +239,8 @@ figure {
 }
 
 .stage button:hover {
-    border-color: var(--yellow);
-    color: var(--yellow);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 figcaption {
@@ -260,10 +257,10 @@ figcaption {
     display: none;
     align-items: center;
     justify-content: center;
-    border: 2px dashed var(--yellow);
-    background: rgb(20 58 49 / 0.92);
+    border: 2px dashed var(--accent);
+    background: rgb(26 48 73 / 0.92);
     font: 600 1.5rem var(--condensed);
-    color: var(--yellow);
+    color: var(--accent);
 }
 
 .stage.dragging .drop-hint {
@@ -458,7 +455,7 @@ output {
 .help-text {
     margin: 6px 0 0;
     padding: 8px 10px;
-    border-left: 3px solid var(--yellow);
+    border-left: 3px solid var(--mat);
     background: var(--paper-shade);
     font-size: 0.87rem;
 }
@@ -482,8 +479,8 @@ output {
 
 .install button:hover {
     background: none;
-    border-color: var(--yellow);
-    color: var(--yellow);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 code,

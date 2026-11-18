@@ -5,7 +5,7 @@ const MIN_SPACING = 56;
 
 /**
  * Rulers along the top and left of the canvas, in image pixels: the unit the traced polygons
- * come in. A yellow mark on each follows the pointer.
+ * come in. A mark on each follows the pointer.
  */
 export function setUpRulers(canvas: HTMLCanvasElement, rulerX: HTMLElement, rulerY: HTMLElement) {
     const markX = document.createElement('i');

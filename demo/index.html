@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>intelligent-scissors demo</title>
     <meta name="description" content="Live-wire segmentation in the browser: click around an object and the outline follows its edges." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%231b4b3f%27/%3E%3Cpath d=%27M3 12C3 5 9 2 13 4%27 fill=%27none%27 stroke=%27%23f1c933%27 stroke-width=%272%27/%3E%3C/svg%3E" />
+    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600&display=swap" />
@@ -14,6 +14,7 @@
 <body>
     <header>
         <div>
+            <img src="./logo.svg" width="30" height="30" alt="" />
             <h1>intelligent-scissors</h1>
             <p>Click around an object and the outline follows its edges.</p>
         </div>
@@ -33,10 +34,7 @@
                 </div>
                 <div class="status">
                     <p id="hint" role="status"></p>
-                    <div class="actions" id="actions" hidden>
-                        <button type="button" id="download">Download polygons</button>
-                        <button type="button" id="clear">Clear</button>
-                    </div>
+                    <button type="button" id="clear" hidden>Clear</button>
                 </div>
                 <figcaption id="credit"></figcaption>
             </figure>

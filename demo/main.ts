@@ -50,16 +50,7 @@ function showStatus(t: ScissorsTool) {
         hint = `${count}, ${area.toLocaleString('en')} px\u00b2. Click on an edge to trace another.`;
     }
     byId('hint').textContent = hint;
-    byId('actions').hidden = shapes.length === 0;
-}
-
-function downloadPolygons() {
-    const json = JSON.stringify({ width: canvas.width, height: canvas.height, polygons: tool.shapes });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
-    link.download = 'polygons.json';
-    link.click();
-    URL.revokeObjectURL(link.href);
+    byId('clear').hidden = shapes.length === 0;
 }
 
 function renderCostMap(map: CostMap): HTMLCanvasElement {
@@ -250,7 +241,6 @@ function setUpControls() {
     showValues();
 
     byId('clear').addEventListener('click', () => tool.clear());
-    byId('download').addEventListener('click', downloadPolygons);
 
     const copy = byId('copyInstall');
     copy.addEventListener('click', async () => {
