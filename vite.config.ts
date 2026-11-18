@@ -10,6 +10,7 @@ export default defineConfig({
     resolve: {
         alias: [
             { find: /^intelligent-scissors\/canvas$/, replacement: src('canvas/index.ts') },
+            { find: /^intelligent-scissors\/mask$/, replacement: src('mask/index.ts') },
             { find: /^intelligent-scissors$/, replacement: src('index.ts') },
         ],
     },
