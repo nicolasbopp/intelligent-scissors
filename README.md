@@ -12,12 +12,12 @@ I wrote the first version for an MRI annotation tool in my master's thesis and l
 out, because I couldn't find a small standalone implementation. OpenCV.js has one, but that
 means shipping several megabytes of WASM, and the others I found only work inside one
 particular viewer. This package has no dependencies, works on a plain `<canvas>` or inside
-your own viewer, reads 16-bit medical images directly, and is about 5 kB gzipped.
+your own viewer, reads 16-bit medical images directly, and is under 6 kB gzipped.
 
 The demo has a few images to try it on: a pelvic MRI slice and a
 microscopy image. You can also drop in your own.
 
-> **Status:** 0.1, not published on npm yet. The API may still change before 1.0.
+> **Status:** 0.1. The API may still change before 1.0.
 
 ## Contents
 
@@ -37,11 +37,11 @@ microscopy image. You can also drop in your own.
 
 ## Install
 
-Until the first npm release, install it from GitHub. The package builds itself on install.
-
 ```sh
-npm install github:nicolasbopp/intelligent-scissors
+npm install intelligent-scissors
 ```
+
+It ships as ES modules and CommonJS with type declarations, and has no dependencies.
 
 ## Getting started
 
@@ -65,6 +65,7 @@ const tool = attachScissors(document.querySelector('canvas')!, {
 | --- | --- |
 | Click | Places an anchor. It jumps to the strongest edge within a few pixels. |
 | Mouse move | The path from the last anchor to the pointer follows the edges. |
+| Shift held | The path is a straight line instead, for stretches without a usable edge. |
 | Double-click, Enter, or a click on the first anchor | Closes the shape. |
 | Backspace | Removes the last anchor. |
 | Esc | Discards the current shape. |
@@ -124,7 +125,7 @@ attachScissors(canvas, {
 
 The canvas tool shows the windowed image. To change the window without losing the traced
 shapes, call `tool.setImage({ ...input, window }, { keepShapes: true })`. The demo does this
-with its window sliders on the MRI example.
+with its brightness and contrast sliders on the MRI example.
 
 To turn a traced outline into a segmentation mask, use `polygonToMask(polygon, width,
 height)`. It returns a `Uint8Array` with 1 for every pixel inside or on the outline.
@@ -192,10 +193,10 @@ These only exist for `attachScissors`:
 
 | Option | Default | |
 | --- | --- | --- |
-| `style` | yellow outline, cyan live path | Colours, line width and anchor size. |
+| `style` | yellow outline, cyan live path | Colours, line width and anchor size. The sizes are in CSS pixels, so lines look the same however the canvas is scaled. |
 | `background` | `'image'` | `'none'` for a transparent overlay, or a function that draws its own background. |
 | `simplify` | `0` | Tolerance in pixels for simplifying finished polygons. Traced paths have one point per pixel; a value of 0.5 to 1 removes most of them without changing the shape. |
-| `keyboard` | `true` | Enables Esc, Backspace and Enter on the focused canvas. |
+| `keyboard` | `true` | Enables Esc, Backspace and Enter on the focused canvas. Shift for straight lines always works. |
 | `onComplete` | | Called with each finished polygon. |
 | `onChange` | | Called after every change, for updating your own UI. |
 
@@ -211,8 +212,10 @@ These only exist for `attachScissors`:
   - `snap(point, radius)` returns the pixel on the strongest edge within `radius`.
   - `costMap` holds the per-pixel features.
 - `new ScissorsSession(scissors, options?)` manages one shape:
-  - `click(point)` returns `'started'`, `'anchored'`, `'closed'` or `'ignored'`.
-  - `move(point)`, `close()`, `undo()`, `reset()` and `polygon()`.
+  - `click(point, { straight? })` returns `'started'`, `'anchored'`, `'closed'` or `'ignored'`.
+  - `move(point, { straight? })` updates the live path. With `straight`, both connect with a
+    straight line instead of following edges.
+  - `close()`, `undo()`, `reset()` and `polygon()`.
   - `anchors`, `segments`, `livePath`, `started`, `closed` and `canClose` for drawing.
 - `simplifyPath(points, tolerance)` simplifies a path with Ramer–Douglas–Peucker.
 - `polygonToMask(polygon, width, height)` fills a closed outline into a mask.
@@ -287,6 +290,9 @@ Measured in headless Edge on a laptop:
 ## Limitations
 
 - It works on single 2D images. For volumes you trace slice by slice.
+- The canvas tool is made for a mouse or pen. On a touch screen you can tap anchors, but
+  there is no live path between taps.
+- Finished shapes can't be edited. To correct one you trace it again.
 - Colour images are converted to luminance first. An edge between two colours of the same
   brightness, say red against green, is invisible to it.
 - For objects with a clear outline, a segmentation model such as SAM gives you a mask with
@@ -309,6 +315,7 @@ The images in the demo are freely licensed:
 ## Roadmap
 
 - A React hook
+- Moving the anchors of a finished shape
 - On-the-fly training, where the cost adapts to the edge you are currently following
 - Optional Web Worker for computing the cost map of very large images
 
