@@ -6,6 +6,7 @@ export default defineConfig({
         'canvas/index': 'src/canvas/index.ts',
         'mask/index': 'src/mask/index.ts',
         'react/index': 'src/react/index.ts',
+        'openseadragon/index': 'src/openseadragon/index.ts',
     },
     format: ['esm', 'cjs'],
     dts: true,
@@ -14,5 +15,5 @@ export default defineConfig({
     treeshake: true,
     splitting: true,
     target: 'es2020',
-    external: ['react'],
+    external: ['react', 'openseadragon'],
 });

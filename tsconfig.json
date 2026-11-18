@@ -18,7 +18,8 @@
       "intelligent-scissors": ["./src/index.ts"],
       "intelligent-scissors/canvas": ["./src/canvas/index.ts"],
       "intelligent-scissors/mask": ["./src/mask/index.ts"],
-      "intelligent-scissors/react": ["./src/react/index.ts"]
+      "intelligent-scissors/react": ["./src/react/index.ts"],
+      "intelligent-scissors/openseadragon": ["./src/openseadragon/index.ts"]
     }
   },
   "include": ["src", "test", "demo", "examples", "vite.config.ts", "tsup.config.ts"]
