@@ -23,8 +23,6 @@ your own viewer, reads 16-bit medical images directly, and is under 6 kB gzipped
 The demo has a few images to try it on: a pelvic MRI slice and a
 microscopy image. You can also drop in your own.
 
-> **Status:** 0.1. The API may still change before 1.0.
-
 ## Contents
 
 - [Install](#install)
