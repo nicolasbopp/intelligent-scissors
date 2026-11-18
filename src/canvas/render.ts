@@ -10,7 +10,9 @@ export interface ScissorsStyle {
     fill: string;
     /** Fill of the anchor handles. */
     anchor: string;
+    /** Line width in CSS pixels, whatever size the canvas is displayed at. */
     lineWidth: number;
+    /** Radius of the anchor handles in CSS pixels. */
     anchorRadius: number;
 }
 
@@ -23,17 +25,25 @@ export const DEFAULT_STYLE: Readonly<ScissorsStyle> = {
     anchorRadius: 4,
 };
 
-/** Draws finished shapes and the shape in progress. Expects a context in image pixels. */
+/** The first anchor is drawn this much larger once clicking it would close the shape. */
+export const CLOSE_HANDLE_SCALE = 1.6;
+
+/**
+ * Draws finished shapes and the shape in progress. Expects a context in image pixels;
+ * `scale` is the number of image pixels per CSS pixel, so lines keep their width on screen.
+ */
 export function drawShapes(
     ctx: CanvasRenderingContext2D,
     shapes: readonly (readonly Point[])[],
     session: ScissorsSession,
     style: ScissorsStyle,
+    scale = 1,
 ): void {
+    const anchorRadius = style.anchorRadius * scale;
     ctx.save();
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.lineWidth = style.lineWidth;
+    ctx.lineWidth = style.lineWidth * scale;
 
     for (const shape of shapes) {
         tracePath(ctx, shape, true);
@@ -57,7 +67,7 @@ export function drawShapes(
 
     // The first anchor grows once clicking it would close the shape
     session.anchors.forEach((anchor, i) => {
-        const radius = i === 0 && session.canClose ? style.anchorRadius * 1.6 : style.anchorRadius;
+        const radius = i === 0 && session.canClose ? anchorRadius * CLOSE_HANDLE_SCALE : anchorRadius;
         ctx.beginPath();
         ctx.arc(anchor.x + 0.5, anchor.y + 0.5, radius, 0, Math.PI * 2);
         ctx.fillStyle = style.anchor;

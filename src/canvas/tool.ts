@@ -3,7 +3,7 @@ import { IntelligentScissors } from '../core/scissors';
 import { ScissorsSession, type SessionOptions } from '../core/session';
 import type { ImageInput, Point, ScissorsOptions } from '../core/types';
 import { rasterize, type ImageSource } from './raster';
-import { DEFAULT_STYLE, drawShapes, type ScissorsStyle } from './render';
+import { CLOSE_HANDLE_SCALE, DEFAULT_STYLE, drawShapes, type ScissorsStyle } from './render';
 
 export interface AttachOptions extends ScissorsOptions, SessionOptions {
     /**
@@ -21,7 +21,10 @@ export interface AttachOptions extends ScissorsOptions, SessionOptions {
     background?: 'image' | 'none' | ((ctx: CanvasRenderingContext2D, tool: ScissorsTool) => void);
     /** Simplifies finished polygons with this tolerance in pixels. Default `0` (off). */
     simplify?: number;
-    /** Esc cancels, Backspace undoes, Enter closes, while the canvas has focus. Default `true`. */
+    /**
+     * Esc cancels, Backspace undoes, Enter closes, while the canvas has focus. Default `true`.
+     * Holding Shift for straight lines works either way.
+     */
     keyboard?: boolean;
     /** Called with every finished polygon, in image pixels. */
     onComplete?: (polygon: Point[], tool: ScissorsTool) => void;
@@ -95,6 +98,8 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
     let session: ScissorsSession;
     const shapes: Point[][] = [];
     let pointer: Point | null = null;
+    /** Shift is held: connect with straight lines instead of following edges. */
+    let straight = false;
     let frame = 0;
 
     const tool: ScissorsTool = {
@@ -118,7 +123,7 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
         },
         undo() {
             session.undo();
-            if (pointer) session.move(pointer);
+            if (pointer && !frame) frame = requestAnimationFrame(followPointer);
             changed();
         },
         cancel() {
@@ -148,6 +153,9 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
         redraw: draw,
         destroy() {
             cancelAnimationFrame(frame);
+            resizeObserver.disconnect();
+            window.removeEventListener('keydown', onShift);
+            window.removeEventListener('keyup', onShift);
             canvas.removeEventListener('pointermove', onPointerMove);
             canvas.removeEventListener('pointerleave', onPointerLeave);
             canvas.removeEventListener('click', onClick);
@@ -188,7 +196,12 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (background === 'image') ctx.drawImage(image, 0, 0);
         else if (typeof background === 'function') background(ctx, tool);
-        drawShapes(ctx, shapes, session, style);
+        drawShapes(ctx, shapes, session, style, imagePixelsPerCssPixel());
+    }
+
+    function imagePixelsPerCssPixel(): number {
+        const shown = canvas.getBoundingClientRect().width;
+        return shown > 0 ? canvas.width / shown : 1;
     }
 
     /**
@@ -200,14 +213,16 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
         frame = 0;
         if (!pointer || !session.started || session.closed) return;
 
-        const deadline = performance.now() + SEARCH_BUDGET_MS;
-        while (!scissors.searchTowards(pointer, SEARCH_CHUNK)) {
-            if (performance.now() > deadline) {
-                frame = requestAnimationFrame(followPointer);
-                return;
+        if (!straight) {
+            const deadline = performance.now() + SEARCH_BUDGET_MS;
+            while (!scissors.searchTowards(pointer, SEARCH_CHUNK)) {
+                if (performance.now() > deadline) {
+                    frame = requestAnimationFrame(followPointer);
+                    return;
+                }
             }
         }
-        session.move(pointer);
+        session.move(pointer, { straight });
         changed();
     }
 
@@ -221,6 +236,7 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
 
     function onPointerMove(e: PointerEvent) {
         pointer = toImagePixels(e);
+        straight = e.shiftKey;
         if (!frame) frame = requestAnimationFrame(followPointer);
     }
 
@@ -229,10 +245,28 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
     }
 
     function onClick(e: MouseEvent) {
-        if (e.button !== 0) return;
+        // The second click of a double-click is left to the dblclick handler
+        if (e.button !== 0 || e.detail > 1) return;
         canvas.focus({ preventScroll: true });
-        if (session.click(toImagePixels(e)) === 'closed') finish(session.polygon());
+        const point = toImagePixels(e);
+        if (onCloseHandle(point)) tool.close();
+        else if (session.click(point, { straight: e.shiftKey }) === 'closed') finish(session.polygon());
         else changed();
+    }
+
+    /** The close handle is drawn in CSS pixels, so it is hit-tested in CSS pixels too. */
+    function onCloseHandle(point: Point): boolean {
+        if (!session.canClose) return false;
+        const first = session.anchors[0];
+        const radius = (style.anchorRadius * CLOSE_HANDLE_SCALE + style.lineWidth) * imagePixelsPerCssPixel();
+        return Math.hypot(point.x - first.x, point.y - first.y) <= radius;
+    }
+
+    /** Pressing or releasing Shift switches the live path without waiting for the next move. */
+    function onShift(e: KeyboardEvent) {
+        if (e.key !== 'Shift' || straight === e.shiftKey) return;
+        straight = e.shiftKey;
+        if (pointer && !frame) frame = requestAnimationFrame(followPointer);
     }
 
     function onDoubleClick(e: MouseEvent) {
@@ -256,6 +290,11 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
     canvas.addEventListener('click', onClick);
     canvas.addEventListener('dblclick', onDoubleClick);
     if (options.keyboard ?? true) canvas.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onShift);
+    window.addEventListener('keyup', onShift);
+    // Line widths are in CSS pixels, so the shapes are redrawn when the canvas is scaled
+    const resizeObserver = new ResizeObserver(draw);
+    resizeObserver.observe(canvas);
     draw();
 
     return tool;
