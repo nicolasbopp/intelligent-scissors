@@ -1,4 +1,10 @@
+<img src="docs/logo.svg" width="72" alt="">
+
 # intelligent-scissors
+
+[![npm](https://img.shields.io/npm/v/intelligent-scissors)](https://www.npmjs.com/package/intelligent-scissors)
+[![CI](https://github.com/nicolasbopp/intelligent-scissors/actions/workflows/ci.yml/badge.svg)](https://github.com/nicolasbopp/intelligent-scissors/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/npm/l/intelligent-scissors)](LICENSE)
 
 Live-wire segmentation for the browser, also known as Intelligent Scissors or the magnetic
 lasso. You click a few points around an object, and the outline between them follows the
