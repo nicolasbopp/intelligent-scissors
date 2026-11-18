@@ -79,6 +79,29 @@ describe('ScissorsSession', () => {
         session.click({ x: 20, y: 40 });
         expect(session.close()).toBeNull();
     });
+
+    it('connects with a straight line on request, without snapping to the edge', () => {
+        const session = new ScissorsSession(createScissors(image));
+        session.click({ x: 20, y: 40 });
+
+        // Straight through the inside of the rectangle, where edge following would go around
+        const live = session.move({ x: 78, y: 41 }, { straight: true });
+        expect(live[live.length - 1]).toEqual({ x: 78, y: 41 });
+        for (const p of live) expect(Math.abs(p.y - 40)).toBeLessThanOrEqual(1);
+
+        expect(session.click({ x: 78, y: 41 }, { straight: true })).toBe('anchored');
+        expect(session.anchors[1]).toEqual({ x: 78, y: 41 });
+        const segment = session.segments[0];
+        expect(segment.length).toBe(59);
+        for (let i = 1; i < segment.length; i++) {
+            expect(Math.abs(segment[i].x - segment[i - 1].x)).toBeLessThanOrEqual(1);
+            expect(Math.abs(segment[i].y - segment[i - 1].y)).toBeLessThanOrEqual(1);
+        }
+
+        // The next segment follows edges again
+        session.move({ x: 50, y: 64 });
+        expect(session.livePath.length).toBeGreaterThan(30);
+    });
 });
 
 describe('geometry', () => {

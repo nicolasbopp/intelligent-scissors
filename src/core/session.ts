@@ -22,6 +22,14 @@ export interface SessionOptions {
 
 export type ClickResult = 'started' | 'anchored' | 'closed' | 'ignored';
 
+export interface StepOptions {
+    /**
+     * Connects to the point with a straight line instead of following edges, and doesn't snap
+     * it. For stretches where the image has no usable edge.
+     */
+    straight?: boolean;
+}
+
 /**
  * The state of tracing one shape: anchors, the fixed segments between them and the live
  * path to the pointer. It has no DOM dependency. Feed it pointer positions in image pixels
@@ -82,9 +90,9 @@ export class ScissorsSession {
     }
 
     /** Handles a click: starts the shape, adds an anchor, or closes the shape near the first anchor. */
-    click(point: Point): ClickResult {
+    click(point: Point, { straight = false }: StepOptions = {}): ClickResult {
         if (this.isClosed) this.reset();
-        const p = this.scissors.snap(point, this.snapRadius);
+        const p = this.scissors.snap(point, straight ? 0 : this.snapRadius);
 
         if (!this.started) {
             this.startSegmentAt(p);
@@ -99,14 +107,19 @@ export class ScissorsSession {
         const last = this.anchorList[this.anchorList.length - 1];
         if (p.x === last.x && p.y === last.y) return 'ignored';
 
-        this.segmentList.push(this.scissors.pathTo(p));
+        this.segmentList.push(straight ? straightLine(last, p) : this.scissors.pathTo(p));
         this.startSegmentAt(p);
         return 'anchored';
     }
 
     /** Moves the live path to `point`. With `autoAnchor` set, this may also place an anchor. */
-    move(point: Point): readonly Point[] {
+    move(point: Point, { straight = false }: StepOptions = {}): readonly Point[] {
         if (!this.started || this.isClosed) return this.live;
+        if (straight) {
+            this.live = straightLine(this.anchorList[this.anchorList.length - 1], this.scissors.snap(point, 0));
+            this.ages = [];
+            return this.live;
+        }
         const next = this.scissors.pathTo(point);
         if (this.autoAnchor > 0 && this.cool(next)) {
             this.live = this.scissors.pathTo(point);
@@ -200,6 +213,30 @@ export class ScissorsSession {
         this.segmentList.push(next.slice(0, end + 1));
         this.startSegmentAt(next[end]);
         return true;
+    }
+}
+
+/** All pixels on the line from `a` to `b`, both included (Bresenham). */
+function straightLine(a: Point, b: Point): Point[] {
+    const dx = Math.abs(b.x - a.x);
+    const dy = Math.abs(b.y - a.y);
+    const sx = a.x < b.x ? 1 : -1;
+    const sy = a.y < b.y ? 1 : -1;
+    const line: Point[] = [];
+    let { x, y } = a;
+    let error = dx - dy;
+    for (;;) {
+        line.push({ x, y });
+        if (x === b.x && y === b.y) return line;
+        const e2 = 2 * error;
+        if (e2 > -dy) {
+            error -= dy;
+            x += sx;
+        }
+        if (e2 < dx) {
+            error += dx;
+            y += sy;
+        }
     }
 }
 
