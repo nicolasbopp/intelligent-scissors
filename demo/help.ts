@@ -1,19 +1,5 @@
-/** Explanations behind the "?" buttons in the sidebar, keyed by the id of the control. */
+/** Explanations behind the "?" buttons in the sidebar, keyed by the id of the slider. */
 const HELP: Record<string, string> = {
-    autoAnchor:
-        'Also called path cooling. When the start of the path has stayed the same over 12 mouse moves, ' +
-        'that part is fixed with an anchor. You only click where the path takes a wrong turn. ' +
-        'Turn it off to place every anchor yourself, which gives more control at sharp corners.',
-    center:
-        'The intensity in the middle of the shown range. Move it towards the brightness of the structure ' +
-        'you want to trace. Pixels outside the window become pure black or white and have no edges there.',
-    width:
-        'How wide the shown intensity range is. A narrow window raises the contrast, so faint edges ' +
-        'become strong and the path follows them more readily, but noise is amplified too. ' +
-        'A wide window shows everything with less contrast.',
-    view:
-        'Image shows the picture. Cost map shows what the algorithm sees: the path prefers dark pixels. ' +
-        'If the edge you want is not dark in the cost map, no weighting will make the path follow it.',
     gradient:
         'How strongly the path is drawn to places where the brightness changes quickly. ' +
         'Higher: follows strong edges and ignores weak ones. Lower: strong edges matter less, ' +
@@ -30,12 +16,11 @@ const HELP: Record<string, string> = {
         'follows the larger structures, but fine details are lost. 0: every pixel counts, for clean images.',
 };
 
-/** Adds a "?" button to every control that has an explanation. The text opens below the control. */
+/** Adds a "?" button to every slider that has an explanation. The text opens below the slider. */
 export function setUpHelp() {
     for (const [id, text] of Object.entries(HELP)) {
-        const control = document.getElementById(id) ?? document.querySelector(`[name="${id}"]`);
-        if (!control) continue;
-        const host = control.closest('.slider, .check, .segmented') as HTMLElement;
+        const host = document.getElementById(id)?.closest<HTMLElement>('.slider');
+        if (!host) continue;
 
         const explanation = document.createElement('p');
         explanation.className = 'help-text';
@@ -58,8 +43,6 @@ export function setUpHelp() {
             button.setAttribute('aria-expanded', String(!explanation.hidden));
         });
 
-        if (host.classList.contains('slider')) host.querySelector('output')!.before(button);
-        else if (host.classList.contains('check')) host.querySelector('small')!.before(button);
-        else host.after(button);
+        host.querySelector('output')!.before(button);
     }
 }

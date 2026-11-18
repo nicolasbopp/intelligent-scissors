@@ -1,13 +1,25 @@
+/*
+ * The page is a cutting mat with a sheet of notes next to it: the image lies on the green
+ * mat between two rulers, the controls are on the paper.
+ */
 :root {
-    color-scheme: dark;
-    --ground: #121315;
-    --surface: #1b1c1f;
-    --line: #2d2f33;
-    --text: #e8e6e1;
-    --muted: #9a978f;
-    --accent: #ffd60a;
-    font-family: ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+    --mat: #1b4b3f;
+    --mat-deep: #143a31;
+    --mat-line: rgb(236 230 200 / 0.07);
+    --print: #ece6c8;
+    --print-dim: rgb(236 230 200 / 0.62);
+    --yellow: #f1c933;
+    --paper: #f3f4ef;
+    --paper-shade: #e6e8e0;
+    --rule: #d3d7cd;
+    --ink: #18231f;
+    --ink-soft: #55625c;
+
+    --ruler: 18px;
+    --condensed: 'Barlow Semi Condensed', 'Arial Narrow', sans-serif;
+    font-family: Barlow, ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
     font-size: 15px;
+    line-height: 1.45;
 }
 
 * {
@@ -19,46 +31,91 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: var(--ground);
-    color: var(--text);
+    background: var(--mat);
+    color: var(--ink);
 }
+
+:focus-visible {
+    outline: 2px solid var(--yellow);
+    outline-offset: 2px;
+}
+
+aside :focus-visible {
+    outline-color: var(--mat);
+}
+
+/* Header: printed on the mat's border */
 
 header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     gap: 16px;
-    padding: 14px 24px;
-    border-bottom: 1px solid var(--line);
+    padding: 12px 24px;
+    background: var(--mat-deep);
+    color: var(--print);
+}
+
+header > div {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 2px 18px;
 }
 
 h1 {
     margin: 0;
-    font-size: 1.15rem;
-    font-family: ui-monospace, 'Cascadia Mono', monospace;
+    font: 600 1.6rem/1.1 var(--condensed);
+    letter-spacing: 0.01em;
+    color: var(--yellow);
 }
 
 header p {
-    margin: 2px 0 0;
-    color: var(--muted);
-    font-size: 0.9rem;
+    margin: 0;
+    color: var(--print-dim);
 }
 
 nav {
     display: flex;
-    gap: 16px;
+    gap: 20px;
+    white-space: nowrap;
 }
 
-a {
-    color: var(--text);
+nav a {
+    color: var(--print);
+    text-underline-offset: 3px;
 }
+
+nav a:hover {
+    color: var(--yellow);
+}
+
+/* Layout */
 
 main {
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 380px;
+    grid-template-columns: minmax(0, 1fr) 440px;
     grid-template-rows: minmax(0, 1fr);
     min-height: 0;
+}
+
+.stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    color: var(--print);
+    background-image:
+        linear-gradient(var(--mat-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--mat-line) 1px, transparent 1px),
+        linear-gradient(var(--mat-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--mat-line) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
 }
 
 figure {
@@ -72,161 +129,375 @@ figure {
     min-height: 0;
 }
 
-figcaption {
-    max-width: 640px;
-    color: var(--muted);
-    font-size: 0.78rem;
-    line-height: 1.4;
-    text-align: center;
+/* Image and rulers. main.ts sets the displayed size of the canvas so it fills the stage */
+
+.frame {
+    position: relative;
+    margin: var(--ruler) 0 0 var(--ruler);
 }
 
-.stage {
-    position: relative;
+.frame canvas {
+    display: block;
+    touch-action: none;
+    box-shadow: 0 0 0 1px var(--print-dim);
+}
+
+.frame canvas:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--yellow);
+}
+
+.ruler {
+    position: absolute;
+    overflow: hidden;
+    font: 600 0.68rem/1 var(--condensed);
+    color: var(--print-dim);
+    pointer-events: none;
+}
+
+.ruler-x {
+    left: 0;
+    bottom: 100%;
+    width: 100%;
+    height: var(--ruler);
+    background: repeating-linear-gradient(90deg, var(--print-dim) 0 1px, transparent 1px var(--minor, 10px)) left bottom / 100% 4px no-repeat;
+}
+
+.ruler-y {
+    top: 0;
+    right: 100%;
+    height: 100%;
+    width: var(--ruler);
+    background: repeating-linear-gradient(var(--print-dim) 0 1px, transparent 1px var(--minor, 10px)) right top / 4px 100% no-repeat;
+}
+
+/* Numbered ticks, placed by rulers.ts */
+.ruler span {
+    position: absolute;
+}
+
+.ruler-x span {
+    bottom: 0;
+    height: 100%;
+    padding-left: 3px;
+    border-left: 1px solid var(--print-dim);
+}
+
+.ruler-y span {
+    right: 0;
+    width: 100%;
+    padding-top: 2px;
+    border-top: 1px solid var(--print-dim);
+    writing-mode: vertical-rl;
+}
+
+/* Where the pointer is, shown on both rulers */
+.ruler i {
+    position: absolute;
+    background: var(--yellow);
+}
+
+.ruler-x i {
+    top: 0;
+    left: -1px;
+    width: 2px;
+    height: 100%;
+}
+
+.ruler-y i {
+    left: 0;
+    top: -1px;
+    width: 100%;
+    height: 2px;
+}
+
+.status {
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 24px;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
+    justify-content: space-between;
+    gap: 16px;
+    align-self: stretch;
+    min-height: 32px;
+    margin-left: var(--ruler);
 }
 
-/* main.ts sets the displayed size so the image fills the stage */
-.stage canvas {
-    display: block;
-    border-radius: 4px;
-    outline: none;
-    box-shadow: 0 0 0 1px var(--line);
-    touch-action: none;
+.status p {
+    margin: 0;
 }
 
-.stage canvas:focus-visible {
-    box-shadow: 0 0 0 2px var(--accent);
+.actions {
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.actions[hidden] {
+    display: none;
+}
+
+.stage button {
+    border-color: var(--print-dim);
+    background: none;
+    color: var(--print);
+}
+
+.stage button:hover {
+    border-color: var(--yellow);
+    color: var(--yellow);
+}
+
+figcaption {
+    align-self: stretch;
+    margin-left: var(--ruler);
+    color: var(--print-dim);
+    font-size: 0.8rem;
+    line-height: 1.4;
 }
 
 .drop-hint {
     position: absolute;
-    inset: 24px;
+    inset: 16px;
     display: none;
     align-items: center;
     justify-content: center;
-    border: 2px dashed var(--accent);
-    border-radius: 8px;
-    background: rgb(18 19 21 / 0.85);
-    font-size: 1.1rem;
+    border: 2px dashed var(--yellow);
+    background: rgb(20 58 49 / 0.92);
+    font: 600 1.5rem var(--condensed);
+    color: var(--yellow);
 }
 
 .stage.dragging .drop-hint {
     display: flex;
 }
 
+/* The sheet of controls */
+
 aside {
-    border-left: 1px solid var(--line);
-    background: var(--surface);
+    background: var(--paper);
     overflow-y: auto;
 }
 
 aside section {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--line);
+    padding: 18px 24px 20px;
+    border-bottom: 1px solid var(--rule);
+}
+
+aside section:last-child {
+    border-bottom: 0;
 }
 
 h2 {
     margin: 0 0 10px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted);
+    font: 600 1.15rem/1.2 var(--condensed);
 }
 
 .keys {
     margin: 0;
-    padding: 0;
-    list-style: none;
     display: grid;
     gap: 6px;
-    font-size: 0.9rem;
+}
+
+.keys div {
+    display: grid;
+    grid-template-columns: 104px 1fr;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.keys dd {
+    margin: 0;
 }
 
 kbd {
     display: inline-block;
-    min-width: 0;
-    padding: 1px 6px;
-    border: 1px solid var(--line);
+    padding: 1px 7px;
+    border: 1px solid var(--rule);
+    border-bottom-width: 2px;
     border-radius: 4px;
-    background: var(--ground);
-    font: 0.8rem ui-monospace, monospace;
+    background: #fff;
+    font: 500 0.82rem Barlow, sans-serif;
 }
 
 button,
 .button {
-    padding: 6px 12px;
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    background: var(--ground);
-    color: var(--text);
+    padding: 5px 12px;
+    border: 1px solid var(--ink-soft);
+    border-radius: 3px;
+    background: none;
+    color: var(--ink);
     font: inherit;
-    font-size: 0.9rem;
     cursor: pointer;
 }
 
 button:hover,
 .button:hover {
-    border-color: var(--muted);
+    background: var(--paper-shade);
+}
+
+.check {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 16px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.check input {
+    margin-top: 4px;
+}
+
+input[type='checkbox'],
+input[type='range'] {
+    accent-color: var(--mat);
+}
+
+.check small,
+.hint {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.87rem;
+    font-weight: 400;
+}
+
+.hint {
+    margin: 8px 0 12px;
+    max-width: 46ch;
+}
+
+.hint:last-child {
+    margin-bottom: 0;
+}
+
+.samples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.samples button[aria-checked='true'] {
+    border-color: var(--mat);
+    background: var(--mat);
+    color: var(--print);
+}
+
+.open {
+    display: inline-block;
 }
 
 .segmented {
     display: flex;
-    margin-top: 10px;
-    border: 1px solid var(--line);
-    border-radius: 4px;
+    border: 1px solid var(--ink-soft);
+    border-radius: 3px;
     overflow: hidden;
 }
 
 .segmented label {
     flex: 1;
-    padding: 6px;
+    padding: 5px;
     text-align: center;
-    font-size: 0.9rem;
     cursor: pointer;
 }
 
 .segmented input {
-    display: none;
+    position: absolute;
+    opacity: 0;
 }
 
 .segmented label:has(input:checked) {
-    background: var(--accent);
-    color: #1b1c1f;
+    background: var(--mat);
+    color: var(--print);
+}
+
+.segmented label:has(input:focus-visible) {
+    outline: 2px solid var(--mat);
+    outline-offset: -4px;
 }
 
 .slider {
     display: grid;
     grid-template-columns: auto auto 1fr;
     align-items: center;
-    gap: 4px;
-    margin-bottom: 10px;
-    font-size: 0.9rem;
+    gap: 2px 4px;
+    margin-top: 12px;
+    font-weight: 500;
 }
 
 .slider input {
     grid-column: 1 / -1;
-    accent-color: var(--accent);
+    width: 100%;
+    margin: 0;
 }
 
 output {
     justify-self: end;
-    color: var(--muted);
-    font-family: ui-monospace, monospace;
+    color: var(--ink-soft);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+}
+
+.help {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin-left: 4px;
+    border-color: var(--rule);
+    border-radius: 50%;
+    font-size: 0.72rem;
+    line-height: 1;
+    color: var(--ink-soft);
+}
+
+.help[aria-expanded='true'] {
+    border-color: var(--mat);
+    background: var(--mat);
+    color: var(--print);
+}
+
+.help-text {
+    margin: 6px 0 0;
+    padding: 8px 10px;
+    border-left: 3px solid var(--yellow);
+    background: var(--paper-shade);
+    font-size: 0.87rem;
+}
+
+.install {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 6px 6px 6px 12px;
+    background: var(--mat);
+    color: var(--print);
+}
+
+.install button {
+    border-color: var(--print-dim);
+    color: var(--print);
+    font-size: 0.87rem;
+}
+
+.install button:hover {
+    background: none;
+    border-color: var(--yellow);
+    color: var(--yellow);
+}
+
+code,
+pre {
+    font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+    font-size: 0.8rem;
 }
 
 pre {
     margin: 0;
-    padding: 10px;
+    padding: 12px;
     overflow-x: auto;
-    border-radius: 4px;
-    background: var(--ground);
-    font-size: 0.78rem;
-    line-height: 1.5;
+    background: var(--paper-shade);
+    line-height: 1.55;
 }
 
 @media (max-width: 800px) {
@@ -235,91 +506,26 @@ pre {
         min-height: 100vh;
     }
 
+    header {
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px 16px;
+    }
+
     main {
         grid-template-columns: 1fr;
     }
 
-    aside {
-        border-left: 0;
-        border-top: 1px solid var(--line);
+    .stage {
+        padding: 16px 16px 16px 4px;
+        min-height: 70vh;
     }
 
-    .stage {
+    .status {
+        flex-wrap: wrap;
+    }
+
+    aside section {
         padding: 16px;
     }
-}
-
-.check {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    margin-top: 14px;
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.check input {
-    margin-top: 3px;
-    accent-color: var(--accent);
-}
-
-.check small,
-.hint {
-    display: block;
-    margin-top: 2px;
-    color: var(--muted);
-    font-size: 0.8rem;
-    line-height: 1.4;
-}
-
-.hint {
-    margin: 8px 0 0;
-}
-
-.samples {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 10px;
-}
-
-.samples button[aria-checked='true'] {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-.open {
-    display: inline-block;
-}
-
-.help {
-    width: 18px;
-    height: 18px;
-    padding: 0;
-    margin-left: 6px;
-    border-radius: 50%;
-    font-size: 0.7rem;
-    line-height: 1;
-    color: var(--muted);
-}
-
-.help[aria-expanded='true'] {
-    border-color: var(--accent);
-    color: var(--accent);
-}
-
-/* The view switch has no label of its own, so its button goes below it on the right */
-.segmented + .help {
-    display: block;
-    margin: 6px 0 0 auto;
-}
-
-.help-text {
-    margin: -4px 0 12px;
-    padding: 8px 10px;
-    border-left: 2px solid var(--accent);
-    background: var(--ground);
-    color: var(--text);
-    font-size: 0.8rem;
-    line-height: 1.45;
 }

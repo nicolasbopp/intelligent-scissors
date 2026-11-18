@@ -5,16 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>intelligent-scissors demo</title>
     <meta name="description" content="Live-wire segmentation in the browser: click around an object and the outline follows its edges." />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M3 12C3 5 9 2 13 4%27 fill=%27none%27 stroke=%27%23ffd60a%27 stroke-width=%272%27/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect width=%2716%27 height=%2716%27 rx=%273%27 fill=%27%231b4b3f%27/%3E%3Cpath d=%27M3 12C3 5 9 2 13 4%27 fill=%27none%27 stroke=%27%23f1c933%27 stroke-width=%272%27/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600&display=swap" />
     <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
     <header>
         <div>
             <h1>intelligent-scissors</h1>
-            <p>Live-wire segmentation for the browser. Click around an object and the outline follows its edges.</p>
+            <p>Click around an object and the outline follows its edges.</p>
         </div>
         <nav>
+            <a href="https://github.com/nicolasbopp/intelligent-scissors#readme">Documentation</a>
             <a href="https://github.com/nicolasbopp/intelligent-scissors">GitHub</a>
         </nav>
     </header>
@@ -22,22 +26,34 @@
     <main>
         <section class="stage" id="stage">
             <figure>
-                <canvas id="canvas" aria-label="Image to trace"></canvas>
+                <div class="frame">
+                    <div class="ruler ruler-x" id="rulerX" aria-hidden="true"></div>
+                    <div class="ruler ruler-y" id="rulerY" aria-hidden="true"></div>
+                    <canvas id="canvas" aria-label="Image to trace"></canvas>
+                </div>
+                <div class="status">
+                    <p id="hint" role="status"></p>
+                    <div class="actions" id="actions" hidden>
+                        <button type="button" id="download">Download polygons</button>
+                        <button type="button" id="clear">Clear</button>
+                    </div>
+                </div>
                 <figcaption id="credit"></figcaption>
             </figure>
-            <div class="drop-hint">Drop an image to trace it</div>
+            <div class="drop-hint">Drop the image to trace it</div>
         </section>
 
         <aside>
             <section>
-                <h2>How to use</h2>
-                <ul class="keys">
-                    <li><kbd>Click</kbd> place an anchor</li>
-                    <li><kbd>Move</kbd> the path follows edges</li>
-                    <li><kbd>Double-click</kbd> or click the first anchor to close</li>
-                    <li><kbd>Backspace</kbd> undo</li>
-                    <li><kbd>Esc</kbd> cancel</li>
-                </ul>
+                <h2>Tracing</h2>
+                <dl class="keys">
+                    <div><dt><kbd>Click</kbd></dt><dd>Place an anchor</dd></div>
+                    <div><dt><kbd>Move</kbd></dt><dd>The path follows the edges</dd></div>
+                    <div><dt><kbd>Shift</kbd></dt><dd>Hold for a straight line where there is no edge</dd></div>
+                    <div><dt><kbd>Double-click</kbd></dt><dd>Close the shape, or click the first anchor</dd></div>
+                    <div><dt><kbd>Backspace</kbd></dt><dd>Remove the last anchor</dd></div>
+                    <div><dt><kbd>Esc</kbd></dt><dd>Discard the shape</dd></div>
+                </dl>
                 <label class="check">
                     <input type="checkbox" id="autoAnchor" checked />
                     <span>Auto anchors<small>Places an anchor wherever the path has stopped changing, so you can trace by just moving the mouse.</small></span>
@@ -48,19 +64,20 @@
                 <h2>Image</h2>
                 <div class="samples" id="samples" role="radiogroup" aria-label="Sample image"></div>
                 <label class="button open">
-                    Open your own image…
+                    Open your own image
                     <input type="file" id="file" accept="image/*" hidden />
                 </label>
+                <p class="hint">Or drop one onto the mat. It stays in your browser.</p>
             </section>
 
             <section id="windowing" hidden>
-                <h2>Window</h2>
-                <p class="hint">This image is 16-bit grayscale. The window picks the intensity range that is shown and used for edge detection, as in a DICOM viewer.</p>
-                <label class="slider">Center <output id="centerOut"></output>
-                    <input type="range" id="center" min="0" max="450" step="1" value="273" />
+                <h2>Brightness / Contrast</h2>
+                <p class="hint">This image is 16-bit grayscale. Brightness and contrast change what is shown and also which edges the path finds: more contrast makes faint edges stronger.</p>
+                <label class="slider">Brightness
+                    <input type="range" id="brightness" min="0" max="450" step="1" />
                 </label>
-                <label class="slider">Width <output id="widthOut"></output>
-                    <input type="range" id="width" min="20" max="900" step="1" value="474" />
+                <label class="slider">Contrast
+                    <input type="range" id="contrast" min="20" max="900" step="1" />
                 </label>
             </section>
 
@@ -70,7 +87,7 @@
                     <label><input type="radio" name="view" value="image" checked /> Image</label>
                     <label><input type="radio" name="view" value="cost" /> Cost map</label>
                 </div>
-                <p class="hint">The cost map shows what the path prefers: dark pixels are cheap to walk along.</p>
+                <p class="hint">The cost map shows what the path sees: dark pixels are cheap to walk along. If an edge is not dark there, no weighting will make the path follow it.</p>
                 <label class="slider">Gradient magnitude <output id="gradientOut"></output>
                     <input type="range" id="gradient" min="0" max="1" step="0.01" value="0.43" />
                 </label>
@@ -86,7 +103,11 @@
             </section>
 
             <section>
-                <h2>Use it</h2>
+                <h2>Use it in your page</h2>
+                <div class="install">
+                    <code id="installCommand">npm install intelligent-scissors</code>
+                    <button type="button" id="copyInstall">Copy</button>
+                </div>
 <pre><code>import { attachScissors } from 'intelligent-scissors/canvas';
 
 attachScissors(canvas, {
