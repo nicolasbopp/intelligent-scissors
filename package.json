@@ -1,6 +1,6 @@
 {
   "name": "intelligent-scissors",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Livewire / Intelligent Scissors (magnetic lasso) for the web: edge-snapping contour tracing on any image or canvas. Zero dependencies, framework-agnostic, works with RGBA and medical grayscale data.",
   "keywords": [
     "intelligent-scissors",
