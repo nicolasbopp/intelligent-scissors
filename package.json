@@ -1,6 +1,6 @@
 {
   "name": "intelligent-scissors",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Livewire / Intelligent Scissors (magnetic lasso) for the web: edge-snapping contour tracing on any image or canvas. Zero dependencies, framework-agnostic, works with RGBA and medical grayscale data. Includes mask tools: contours, COCO RLE, IoU.",
   "keywords": [
     "intelligent-scissors",
@@ -15,6 +15,8 @@
     "canvas",
     "react",
     "react-hook",
+    "openseadragon",
+    "histology",
     "medical-imaging",
     "mask",
     "coco",
@@ -76,6 +78,16 @@
         "default": "./dist/react/index.cjs"
       }
     },
+    "./openseadragon": {
+      "import": {
+        "types": "./dist/openseadragon/index.d.ts",
+        "default": "./dist/openseadragon/index.js"
+      },
+      "require": {
+        "types": "./dist/openseadragon/index.d.cts",
+        "default": "./dist/openseadragon/index.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -94,9 +106,13 @@
     "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
   },
   "peerDependencies": {
+    "openseadragon": ">=4",
     "react": ">=18"
   },
   "peerDependenciesMeta": {
+    "openseadragon": {
+      "optional": true
+    },
     "react": {
       "optional": true
     }
@@ -105,6 +121,7 @@
     "@types/node": "^22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "openseadragon": "^6.1.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tsup": "^8.5.0",

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0 (2026-11-18)
+
+- New entry point `intelligent-scissors/openseadragon` with `attachToViewer`: tracing inside
+  an OpenSeadragon viewer, with its zooming and panning left intact. Edges can be found on a
+  downscaled copy of a slide. OpenSeadragon is an optional peer dependency
+- `createController` and `drawShapes` are exported from `intelligent-scissors/canvas`, for
+  connecting viewers that have their own events and drawing. `attachScissors` is built on
+  them and behaves as before
+- Canvas tool: a click that ends a drag no longer places an anchor, so the canvas can sit in
+  a container that pans
+
 ## 0.3.0 (2026-11-18)
 
 - New entry point `intelligent-scissors/react` with the `useScissors` hook: the canvas tool

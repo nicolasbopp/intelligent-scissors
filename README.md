@@ -18,7 +18,7 @@ I wrote the first version for an MRI annotation tool in my master's thesis and l
 out, because I couldn't find a small standalone implementation. OpenCV.js has one, but that
 means shipping several megabytes of WASM, and the others I found only work inside one
 particular viewer. This package has no dependencies, works on a plain `<canvas>` or inside
-your own viewer, reads 16-bit medical images directly, and is under 6 kB gzipped.
+your own viewer, reads 16-bit medical images directly, and is about 6 kB gzipped.
 
 The demo has a few images to try it on: a pelvic MRI slice and a
 microscopy image. You can also drop in your own.
@@ -28,6 +28,7 @@ microscopy image. You can also drop in your own.
 - [Install](#install)
 - [Getting started](#getting-started)
 - [React](#react)
+- [OpenSeadragon](#openseadragon)
 - [Using it in your own viewer](#using-it-in-your-own-viewer)
 - [Medical and other grayscale images](#medical-and-other-grayscale-images)
 - [Masks and COCO export](#masks-and-coco-export)
@@ -107,6 +108,36 @@ or `autoAnchor` updates the running tool, and callbacks don't need `useCallback`
 or later is required for this entry point only. [examples/react.tsx](examples/react.tsx)
 has a complete component.
 
+## OpenSeadragon
+
+`attachToViewer` adds tracing to an [OpenSeadragon](https://openseadragon.github.io/)
+viewer, for whole-slide images and other deep-zoom pictures. Dragging still pans and the
+wheel still zooms; a click places an anchor instead of zooming in.
+
+```ts
+import { attachToViewer } from 'intelligent-scissors/openseadragon';
+
+viewer.addHandler('open', () => {
+  const tool = attachToViewer(viewer, {
+    image: overview, // the pixels to find edges on
+    onComplete(polygon) {
+      save(polygon.map(p => ({ x: p.x * tool.scale, y: p.y * tool.scale })));
+    },
+  });
+});
+```
+
+A slide is far too large to search for edges at full resolution, so you pass the pixels to
+trace on yourself: for a small image the image itself, for a slide an overview of 2000 to
+4000 pixels width. Polygons come back in the pixels of that image, and `tool.scale` converts
+them to the full-resolution image. The outlines are drawn at screen resolution, so they stay
+sharp however far you zoom in.
+
+It takes the tracing options of `attachScissors` and returns the same methods (`undo()`,
+`clear()`, `configure()`, `destroy()` and so on). Rotated and flipped viewers work.
+Tested with OpenSeadragon 6. [examples/openseadragon.ts](examples/openseadragon.ts) has the
+full setup.
+
 ## Using it in your own viewer
 
 If you need your own rendering, zoom, or input handling, use `ScissorsSession` directly. It
@@ -130,8 +161,14 @@ viewer.on('pointermove', e => {
 
 `segments` are the fixed parts between anchors, `livePath` is the part that follows the
 pointer. [examples/custom-viewer.ts](examples/custom-viewer.ts) has a complete version with
-zoom and pan. The same pattern works in Konva, Fabric, OpenSeadragon, Cornerstone, or a
-WebGL viewer.
+zoom and pan. The same pattern works in Konva, Fabric, Cornerstone, or a WebGL viewer.
+
+One level up, `createController` from `intelligent-scissors/canvas` is the canvas tool
+without its canvas. It also takes positions in image pixels (`moveTo`, `clickAt`), and adds
+what the tool does on top of the session: it follows the pointer in slices of a few
+milliseconds, keeps the finished shapes, and handles closing and simplifying. `drawShapes`
+draws its state into any 2D context that you have transformed to image pixels. The
+OpenSeadragon adapter is about 200 lines on top of these two.
 
 ## Medical and other grayscale images
 
@@ -300,6 +337,11 @@ These only exist for `attachScissors`:
 - `maskArea(mask)`, `maskIoU(a, b)` and `maskBounds(mask, width, height)`.
 - `polygonToMask`, `polygonArea` and `simplifyPath` are exported here as well.
 
+**`intelligent-scissors/openseadragon`**
+
+- `attachToViewer(viewer, options)` returns a `ViewerScissors`: the methods of
+  `ScissorsTool`, plus `scale` for converting to full-resolution pixels.
+
 **`intelligent-scissors/react`**
 
 - `useScissors(options)` returns `{ ref, shapes, tracing, tool }`. `ref` goes on the
@@ -310,6 +352,10 @@ These only exist for `attachScissors`:
 - `attachScissors(canvas, options)` returns a `ScissorsTool` with `shapes`, `session`,
   `scissors`, `image`, and the methods `close()`, `undo()`, `cancel()`, `clear()`,
   `setImage(image, { keepShapes? })`, `configure(options)`, `redraw()` and `destroy()`.
+- `createController(pixels, options)` returns a `ScissorsController`: the tool without a
+  canvas, driven with `moveTo(point)`, `clickAt(point)` and `setStraight(boolean)`.
+- `drawShapes(ctx, shapes, session, style, scale?)` draws finished shapes and the one in
+  progress. `rasterize(image)` reads the pixels of anything the tool accepts as an image.
 
 Everything is typed, and the type declarations carry the documentation, so your editor
 shows it.
