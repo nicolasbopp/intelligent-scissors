@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (2026-11-18)
+
+- New entry point `intelligent-scissors/react` with the `useScissors` hook: the canvas tool
+  for React, with the finished shapes as state. React is an optional peer dependency; the
+  other entry points don't need it
+
 ## 0.2.0 (2026-11-18)
 
 - New entry point `intelligent-scissors/mask` for getting annotations into and out of

@@ -27,6 +27,7 @@ microscopy image. You can also drop in your own.
 
 - [Install](#install)
 - [Getting started](#getting-started)
+- [React](#react)
 - [Using it in your own viewer](#using-it-in-your-own-viewer)
 - [Medical and other grayscale images](#medical-and-other-grayscale-images)
 - [Masks and COCO export](#masks-and-coco-export)
@@ -78,6 +79,33 @@ const tool = attachScissors(document.querySelector('canvas')!, {
 The canvas takes the size of the image, so scale it with CSS. Finished polygons are in
 `tool.shapes` and are passed to `onComplete`. If you already show the image somewhere and
 only need the outlines on top, pass `background: 'none'` and lay the canvas over your image.
+
+## React
+
+`useScissors` wraps the canvas tool in a hook. The finished shapes are state, so the
+component re-renders when one is added.
+
+```tsx
+import { useScissors } from 'intelligent-scissors/react';
+
+function Tracer({ image }: { image: HTMLImageElement | null }) {
+  const { ref, shapes, tracing, tool } = useScissors({ image, autoAnchor: 12 });
+
+  return (
+    <>
+      <canvas ref={ref} />
+      <button onClick={() => tool?.undo()} disabled={!tracing}>Undo</button>
+      <p>{shapes.length} shapes</p>
+    </>
+  );
+}
+```
+
+It takes the same options as `attachScissors`. `image` may be `null` while it loads; a new
+image replaces the old one and clears the shapes. Changing `weights`, `sigma`, `snapRadius`
+or `autoAnchor` updates the running tool, and callbacks don't need `useCallback`. React 18
+or later is required for this entry point only. [examples/react.tsx](examples/react.tsx)
+has a complete component.
 
 ## Using it in your own viewer
 
@@ -271,6 +299,11 @@ These only exist for `attachScissors`:
 - `encodeRle(mask, width, height, { compress? })` and `decodeRle(rle)` convert to and from COCO RLE.
 - `maskArea(mask)`, `maskIoU(a, b)` and `maskBounds(mask, width, height)`.
 - `polygonToMask`, `polygonArea` and `simplifyPath` are exported here as well.
+
+**`intelligent-scissors/react`**
+
+- `useScissors(options)` returns `{ ref, shapes, tracing, tool }`. `ref` goes on the
+  `<canvas>`, `tool` is the `ScissorsTool` or `null` before canvas and image are there.
 
 **`intelligent-scissors/canvas`**
 

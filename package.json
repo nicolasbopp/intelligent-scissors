@@ -1,6 +1,6 @@
 {
   "name": "intelligent-scissors",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Livewire / Intelligent Scissors (magnetic lasso) for the web: edge-snapping contour tracing on any image or canvas. Zero dependencies, framework-agnostic, works with RGBA and medical grayscale data. Includes mask tools: contours, COCO RLE, IoU.",
   "keywords": [
     "intelligent-scissors",
@@ -13,6 +13,8 @@
     "contour",
     "edge-detection",
     "canvas",
+    "react",
+    "react-hook",
     "medical-imaging",
     "mask",
     "coco",
@@ -64,6 +66,16 @@
         "default": "./dist/mask/index.cjs"
       }
     },
+    "./react": {
+      "import": {
+        "types": "./dist/react/index.d.ts",
+        "default": "./dist/react/index.js"
+      },
+      "require": {
+        "types": "./dist/react/index.d.cts",
+        "default": "./dist/react/index.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -81,8 +93,20 @@
     "prepare": "tsup",
     "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
   },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.0",
