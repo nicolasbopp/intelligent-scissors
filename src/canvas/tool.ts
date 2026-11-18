@@ -1,9 +1,9 @@
-import { simplifyPath } from '../core/geometry';
-import { IntelligentScissors } from '../core/scissors';
-import { ScissorsSession, type SessionOptions } from '../core/session';
-import type { ImageInput, Point, ScissorsOptions } from '../core/types';
+import type { IntelligentScissors } from '../core/scissors';
+import type { ScissorsSession, SessionOptions } from '../core/session';
+import type { Point, ScissorsOptions } from '../core/types';
+import { createController, handleKey } from './controller';
 import { rasterize, type ImageSource } from './raster';
-import { CLOSE_HANDLE_SCALE, DEFAULT_STYLE, drawShapes, type ScissorsStyle } from './render';
+import { closeHandleRadius, DEFAULT_STYLE, drawShapes, type ScissorsStyle } from './render';
 
 export interface AttachOptions extends ScissorsOptions, SessionOptions {
     /**
@@ -64,9 +64,9 @@ export interface ScissorsTool {
     destroy(): void;
 }
 
-/** Time per animation frame spent on extending the search before the browser gets control back. */
-const SEARCH_BUDGET_MS = 8;
-const SEARCH_CHUNK = 4000;
+
+/** A click that ends further than this (CSS pixels) from where the button went down was a drag. */
+const DRAG_TOLERANCE = 4;
 
 /**
  * Turns a `<canvas>` into a tracing tool. Click to place anchors, move the mouse to see the
@@ -78,84 +78,59 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
     const context = canvas.getContext('2d');
     if (!context) throw new Error('intelligent-scissors: could not get a 2D context from the canvas');
     const ctx: CanvasRenderingContext2D = context;
-
     const style: ScissorsStyle = { ...DEFAULT_STYLE, ...options.style };
-    let sessionOptions: SessionOptions = {
+
+    let raster = rasterize(options.image);
+    let pressedAt: { x: number; y: number } | null = null;
+
+    const controller = createController(raster.pixels, {
+        weights: options.weights,
+        sigma: options.sigma,
+        zeroCrossingThreshold: options.zeroCrossingThreshold,
         snapRadius: options.snapRadius,
         closeRadius: options.closeRadius,
         autoAnchor: options.autoAnchor,
         autoAnchorMinLength: options.autoAnchorMinLength,
-    };
-    let scissorsOptions: ScissorsOptions = {
-        weights: options.weights,
-        sigma: options.sigma,
-        zeroCrossingThreshold: options.zeroCrossingThreshold,
-    };
-
-    let image: HTMLCanvasElement;
-    let pixels: ImageInput;
-    let scissors: IntelligentScissors;
-    let session: ScissorsSession;
-    const shapes: Point[][] = [];
-    let pointer: Point | null = null;
-    /** Shift is held: connect with straight lines instead of following edges. */
-    let straight = false;
-    let frame = 0;
+        // Read when a shape is finished, so the caller may change it later
+        get simplify() {
+            return options.simplify;
+        },
+        onComplete: polygon => options.onComplete?.(polygon, tool),
+        onChange() {
+            draw();
+            options.onChange?.(tool);
+        },
+    });
 
     const tool: ScissorsTool = {
         canvas,
         get session() {
-            return session;
+            return controller.session;
         },
         get scissors() {
-            return scissors;
+            return controller.scissors;
         },
         get image() {
-            return image;
+            return raster.canvas;
         },
-        get shapes() {
-            return shapes;
+        shapes: controller.shapes,
+        close: controller.close,
+        undo: controller.undo,
+        cancel: controller.cancel,
+        clear: controller.clear,
+        setImage(next, setOptions) {
+            raster = rasterize(next);
+            fitCanvas();
+            controller.setPixels(raster.pixels, setOptions);
         },
-        close() {
-            const polygon = session.close();
-            if (polygon) finish(polygon);
-            else changed();
-        },
-        undo() {
-            session.undo();
-            if (pointer && !frame) frame = requestAnimationFrame(followPointer);
-            changed();
-        },
-        cancel() {
-            session.reset();
-            changed();
-        },
-        clear() {
-            shapes.length = 0;
-            session.reset();
-            changed();
-        },
-        setImage(next, { keepShapes = false } = {}) {
-            if (!keepShapes) shapes.length = 0;
-            load(next);
-            changed();
-        },
-        configure(next) {
-            const { snapRadius, closeRadius, autoAnchor, autoAnchorMinLength, ...rest } = next;
-            sessionOptions = withDefined(sessionOptions, { snapRadius, closeRadius, autoAnchor, autoAnchorMinLength });
-            if (Object.keys(rest).length > 0) {
-                scissorsOptions = { ...scissorsOptions, ...rest };
-                scissors = new IntelligentScissors(pixels, scissorsOptions);
-            }
-            session = new ScissorsSession(scissors, sessionOptions);
-            changed();
-        },
+        configure: controller.configure,
         redraw: draw,
         destroy() {
-            cancelAnimationFrame(frame);
+            controller.destroy();
             resizeObserver.disconnect();
             window.removeEventListener('keydown', onShift);
             window.removeEventListener('keyup', onShift);
+            canvas.removeEventListener('pointerdown', onPointerDown);
             canvas.removeEventListener('pointermove', onPointerMove);
             canvas.removeEventListener('pointerleave', onPointerLeave);
             canvas.removeEventListener('click', onClick);
@@ -164,66 +139,22 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
         },
     };
 
-    function load(source: ImageSource) {
-        const raster = rasterize(source);
-        image = raster.canvas;
-        pixels = raster.pixels;
-        if (canvas.width !== pixels.width) canvas.width = pixels.width;
-        if (canvas.height !== pixels.height) canvas.height = pixels.height;
-        rebuild();
-    }
-
-    function rebuild() {
-        scissors = new IntelligentScissors(pixels, scissorsOptions);
-        session = new ScissorsSession(scissors, sessionOptions);
-    }
-
-    function finish(polygon: Point[]) {
-        const result = options.simplify ? simplifyPath(polygon, options.simplify) : polygon;
-        shapes.push(result);
-        session.reset();
-        changed();
-        options.onComplete?.(result, tool);
-    }
-
-    function changed() {
-        draw();
-        options.onChange?.(tool);
+    function fitCanvas() {
+        if (canvas.width !== raster.pixels.width) canvas.width = raster.pixels.width;
+        if (canvas.height !== raster.pixels.height) canvas.height = raster.pixels.height;
     }
 
     function draw() {
         const background = options.background ?? 'image';
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (background === 'image') ctx.drawImage(image, 0, 0);
+        if (background === 'image') ctx.drawImage(raster.canvas, 0, 0);
         else if (typeof background === 'function') background(ctx, tool);
-        drawShapes(ctx, shapes, session, style, imagePixelsPerCssPixel());
+        drawShapes(ctx, controller.shapes, controller.session, style, imagePixelsPerCssPixel());
     }
 
     function imagePixelsPerCssPixel(): number {
         const shown = canvas.getBoundingClientRect().width;
         return shown > 0 ? canvas.width / shown : 1;
-    }
-
-    /**
-     * Follows the pointer. A long way from the last anchor can mean searching most of the
-     * image, so the search runs in slices of a few milliseconds per frame. The live path
-     * updates once the pointer's pixel is reached.
-     */
-    function followPointer() {
-        frame = 0;
-        if (!pointer || !session.started || session.closed) return;
-
-        if (!straight) {
-            const deadline = performance.now() + SEARCH_BUDGET_MS;
-            while (!scissors.searchTowards(pointer, SEARCH_CHUNK)) {
-                if (performance.now() > deadline) {
-                    frame = requestAnimationFrame(followPointer);
-                    return;
-                }
-            }
-        }
-        session.move(pointer, { straight });
-        changed();
     }
 
     function toImagePixels(e: MouseEvent): Point {
@@ -234,57 +165,52 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
         };
     }
 
+    function onPointerDown(e: PointerEvent) {
+        pressedAt = { x: e.clientX, y: e.clientY };
+    }
+
     function onPointerMove(e: PointerEvent) {
-        pointer = toImagePixels(e);
-        straight = e.shiftKey;
-        if (!frame) frame = requestAnimationFrame(followPointer);
+        controller.moveTo(toImagePixels(e), { straight: e.shiftKey });
     }
 
     function onPointerLeave() {
-        pointer = null;
+        controller.moveTo(null);
     }
 
     function onClick(e: MouseEvent) {
         // The second click of a double-click is left to the dblclick handler
         if (e.button !== 0 || e.detail > 1) return;
-        canvas.focus({ preventScroll: true });
-        const point = toImagePixels(e);
-        if (onCloseHandle(point)) tool.close();
-        else if (session.click(point, { straight: e.shiftKey }) === 'closed') finish(session.polygon());
-        else changed();
-    }
+        // Dragging, e.g. to pan a viewer the canvas sits in, is not a click
+        const dragged = pressedAt && Math.hypot(e.clientX - pressedAt.x, e.clientY - pressedAt.y) > DRAG_TOLERANCE;
+        pressedAt = null;
+        if (dragged) return;
 
-    /** The close handle is drawn in CSS pixels, so it is hit-tested in CSS pixels too. */
-    function onCloseHandle(point: Point): boolean {
-        if (!session.canClose) return false;
-        const first = session.anchors[0];
-        const radius = (style.anchorRadius * CLOSE_HANDLE_SCALE + style.lineWidth) * imagePixelsPerCssPixel();
-        return Math.hypot(point.x - first.x, point.y - first.y) <= radius;
+        canvas.focus({ preventScroll: true });
+        controller.clickAt(toImagePixels(e), {
+            straight: e.shiftKey,
+            // The close handle is drawn in CSS pixels, so it is hit-tested in CSS pixels too
+            closeHandleRadius: closeHandleRadius(style) * imagePixelsPerCssPixel(),
+        });
     }
 
     /** Pressing or releasing Shift switches the live path without waiting for the next move. */
     function onShift(e: KeyboardEvent) {
-        if (e.key !== 'Shift' || straight === e.shiftKey) return;
-        straight = e.shiftKey;
-        if (pointer && !frame) frame = requestAnimationFrame(followPointer);
+        if (e.key === 'Shift') controller.setStraight(e.shiftKey);
     }
 
     function onDoubleClick(e: MouseEvent) {
         e.preventDefault();
-        tool.close();
+        controller.close();
     }
 
     function onKeyDown(e: KeyboardEvent) {
-        if (e.key === 'Escape') tool.cancel();
-        else if (e.key === 'Backspace' || e.key === 'Delete') tool.undo();
-        else if (e.key === 'Enter') tool.close();
-        else return;
-        e.preventDefault();
+        if (handleKey(controller, e.key)) e.preventDefault();
     }
 
-    load(options.image);
+    fitCanvas();
     if (!canvas.hasAttribute('tabindex')) canvas.tabIndex = 0;
     if (!canvas.style.cursor) canvas.style.cursor = 'crosshair';
+    canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);
     canvas.addEventListener('pointerleave', onPointerLeave);
     canvas.addEventListener('click', onClick);
@@ -298,13 +224,4 @@ export function attachScissors(canvas: HTMLCanvasElement, options: AttachOptions
     draw();
 
     return tool;
-}
-
-/** `base` with the keys of `changes` that are not undefined. */
-function withDefined<T extends object>(base: T, changes: Partial<T>): T {
-    const result = { ...base };
-    for (const key of Object.keys(changes) as (keyof T)[]) {
-        if (changes[key] !== undefined) result[key] = changes[key] as T[keyof T];
-    }
-    return result;
 }

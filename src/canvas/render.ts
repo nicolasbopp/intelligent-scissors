@@ -26,7 +26,12 @@ export const DEFAULT_STYLE: Readonly<ScissorsStyle> = {
 };
 
 /** The first anchor is drawn this much larger once clicking it would close the shape. */
-export const CLOSE_HANDLE_SCALE = 1.6;
+const CLOSE_HANDLE_SCALE = 1.6;
+
+/** Radius of the enlarged first anchor in CSS pixels, with a little slack for the outline. */
+export function closeHandleRadius(style: ScissorsStyle): number {
+    return style.anchorRadius * CLOSE_HANDLE_SCALE + style.lineWidth;
+}
 
 /**
  * Draws finished shapes and the shape in progress. Expects a context in image pixels;
