@@ -1,8 +1,14 @@
 # Changelog
 
-## 0.1.1 (2026-11-18)
+## 0.2.0 (2026-11-18)
 
-- README only: removed the status note. No code changes.
+- New entry point `intelligent-scissors/mask` for getting annotations into and out of
+  training formats:
+  - `maskToPolygons` traces the outline of every region in a mask
+  - `encodeRle` and `decodeRle` write and read COCO RLE, as numbers or as the compact string,
+    checked against pycocotools
+  - `maskArea`, `maskIoU` and `maskBounds`
+- README: removed the status note
 
 ## 0.1.0 (2026-11-18)
 

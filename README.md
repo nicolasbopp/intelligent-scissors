@@ -29,6 +29,7 @@ microscopy image. You can also drop in your own.
 - [Getting started](#getting-started)
 - [Using it in your own viewer](#using-it-in-your-own-viewer)
 - [Medical and other grayscale images](#medical-and-other-grayscale-images)
+- [Masks and COCO export](#masks-and-coco-export)
 - [Tracing long boundaries](#tracing-long-boundaries)
 - [Large images](#large-images)
 - [Options](#options)
@@ -136,6 +137,44 @@ height)`. It returns a `Uint8Array` with 1 for every pixel inside or on the outl
 [examples/grayscale-mask.ts](examples/grayscale-mask.ts) runs in Node and shows the whole
 process without a browser.
 
+## Masks and COCO export
+
+Annotations usually end up in a training format, and models give you masks that you want to
+show or correct as outlines. `intelligent-scissors/mask` has the conversions for both
+directions. It doesn't depend on the tracing code, so you can use it on its own.
+
+```ts
+import {
+  polygonToMask, maskToPolygons, encodeRle, decodeRle, maskArea, maskBounds, maskIoU,
+} from 'intelligent-scissors/mask';
+
+// A traced polygon as a COCO annotation
+const mask = polygonToMask(polygon, width, height);
+const box = maskBounds(mask, width, height)!;
+const annotation = {
+  segmentation: encodeRle(mask, width, height, { compress: true }),
+  area: maskArea(mask),
+  bbox: [box.x, box.y, box.width, box.height],
+  iscrowd: 1,
+};
+
+// A mask from a model as outlines, one per region
+const { mask: predicted } = decodeRle(prediction.segmentation);
+const outlines = maskToPolygons(predicted, width, height, { simplify: 0.75 });
+
+// How well two masks agree
+const iou = maskIoU(mask, predicted);
+```
+
+- `encodeRle` produces what pycocotools reads: runs down the columns, `size` as
+  `[height, width]`, and `counts` either as numbers or, with `compress`, as the compact
+  string. `decodeRle` reads both. The tests compare the output with pycocotools.
+- `maskToPolygons` returns the outer boundary of each 8-connected region. Holes are not
+  represented; a ring comes back as a filled disc. Keep such masks as RLE.
+- A mask is any array with one value per pixel, row by row; non-zero means inside.
+
+[examples/coco-export.ts](examples/coco-export.ts) runs the whole way in Node.
+
 ## Tracing long boundaries
 
 With `autoAnchor` set, the tool places anchors by itself. Whenever the start of the live
@@ -225,6 +264,13 @@ These only exist for `attachScissors`:
 - `polygonToMask(polygon, width, height)` fills a closed outline into a mask.
 - `polygonArea(polygon)` returns the enclosed area in square pixels.
 - `computeCostMap(image, options?)` and `costMapToRGBA(map)` give direct access to the cost map, for example to visualise it as the demo does.
+
+**`intelligent-scissors/mask`**
+
+- `maskToPolygons(mask, width, height, { simplify?, minPixels? })` returns one outline per region.
+- `encodeRle(mask, width, height, { compress? })` and `decodeRle(rle)` convert to and from COCO RLE.
+- `maskArea(mask)`, `maskIoU(a, b)` and `maskBounds(mask, width, height)`.
+- `polygonToMask`, `polygonArea` and `simplifyPath` are exported here as well.
 
 **`intelligent-scissors/canvas`**
 
